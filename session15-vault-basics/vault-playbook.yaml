@@ -1,0 +1,14 @@
+- name: Vault variable demonstration
+  hosts: all
+  become: true
+  vars_files:
+    - secret-vars.yaml
+
+  tasks:
+    - name: Show masked secret usage
+      copy:
+        content: |
+          db_user={{ db_user }}
+          db_password={{ db_password }}
+        dest: /tmp/secret_info.txt
+        mode: "0600"

@@ -1,0 +1,6 @@
+- name: Deploy web stack
+  hosts: web
+  become: true
+
+  roles:
+    - webstack

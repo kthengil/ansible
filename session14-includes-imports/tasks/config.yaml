@@ -1,0 +1,7 @@
+- name: Deploy configuration file
+  copy:
+    content: |
+      # Managed by Ansible
+      ServerName {{ ansible_hostname }}
+    dest: /etc/httpd/conf.d/include.conf
+    mode: "0644"

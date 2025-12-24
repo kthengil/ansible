@@ -1,0 +1,4 @@
+- name: Install web server package
+  dnf:
+    name: "{{ web_package }}"
+    state: present

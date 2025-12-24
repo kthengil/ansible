@@ -1,0 +1,17 @@
+- name: Package management using dnf module
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install common packages
+      dnf:
+        name:
+          - vim
+          - git
+          - curl
+        state: present
+
+    - name: Remove unwanted package
+      dnf:
+        name: telnet
+        state: absent

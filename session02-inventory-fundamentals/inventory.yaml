@@ -1,0 +1,31 @@
+all:
+  hosts:
+    flame:
+    frost:
+    storm:
+    earth:
+    water:
+
+  children:
+    web:
+      hosts:
+        flame:
+        frost:
+
+    db:
+      hosts:
+        storm:
+
+    app:
+      hosts:
+        earth:
+        water:
+
+    prod:
+      children:
+        web:
+        db:
+
+    nonprod:
+      children:
+        app:

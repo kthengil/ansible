@@ -1,0 +1,38 @@
+- name: Loop and filter demonstration
+  hosts: all
+  become: true
+
+  vars:
+    packages:
+      - vim
+      - git
+      - curl
+
+    app_dirs:
+      - app1
+      - app2
+      - app3
+
+  tasks:
+    - name: Install multiple packages
+      dnf:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages }}"
+
+    - name: Create application directories
+      file:
+        path: "/opt/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ app_dirs }}"
+
+    - name: Create uppercase marker files
+      file:
+        path: "/tmp/{{ item | upper }}.txt"
+        state: touch
+      loop: "{{ app_dirs }}"
+
+    - name: Show installed package count
+      debug:
+        msg: "Total packages: {{ packages | length }}"

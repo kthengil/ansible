@@ -1,0 +1,28 @@
+- name: Template rendering demonstration
+  hosts: all
+  become: true
+
+  vars:
+    app_name: demo_app
+    environment: dev
+    app_port: 8080
+
+    packages:
+      - vim
+      - git
+      - curl
+
+  tasks:
+    - name: Create application directory
+      file:
+        path: /opt/demo_app
+        state: directory
+        mode: "0755"
+
+    - name: Render application configuration
+      template:
+        src: templates/app.conf.j2
+        dest: /opt/demo_app/app.conf
+        owner: root
+        group: root
+        mode: "0644"

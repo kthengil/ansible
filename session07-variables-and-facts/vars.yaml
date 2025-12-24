@@ -1,0 +1,17 @@
+# Application-related variables
+app_name: demo_app
+app_dir: /opt/demo_app
+
+# Ownership
+app_user: root
+app_group: root
+
+# Packages to be installed
+packages:
+  - vim
+  - git
+  - curl
+
+# Service configuration
+service_name: sshd
+service_enabled: true

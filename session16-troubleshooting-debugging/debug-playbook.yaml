@@ -1,0 +1,44 @@
+- name: Debugging and troubleshooting demonstration
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Print basic host information
+      debug:
+        msg:
+          - "Hostname: {{ ansible_hostname }}"
+          - "OS Family: {{ ansible_os_family }}"
+          - "OS Version: {{ ansible_distribution }} {{ ansible_distribution_major_version }}"
+
+    - name: Check uptime
+      command: uptime
+      register: uptime_result
+      changed_when: false
+
+    - name: Debug uptime command output
+      debug:
+        var: uptime_result
+
+    - name: Verify SSH service status
+      command: systemctl is-active sshd
+      register: sshd_status
+      ignore_errors: true
+      changed_when: false
+
+    - name: Debug SSH service status
+      debug:
+        msg: "SSHD service state: {{ sshd_status.stdout | default('unknown') }}"
+
+    - name: Check disk usage
+      shell: df -h /
+      register: disk_usage
+      changed_when: false
+
+    - name: Debug disk usage output
+      debug:
+        msg: "{{ disk_usage.stdout_lines }}"
+
+    - name: Conditional debug if disk usage is high
+      debug:
+        msg: "Warning: Disk usage might be high"
+      when: disk_usage.stdout is search('9[0-9]%')

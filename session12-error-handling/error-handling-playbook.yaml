@@ -1,0 +1,32 @@
+- name: Error handling demonstration
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Application deployment block
+      block:
+        - name: Create application directory
+          file:
+            path: /opt/error_demo
+            state: directory
+            mode: "0755"
+
+        - name: Install non-existent package (intentional failure)
+          dnf:
+            name: fakepackage
+            state: present
+
+      rescue:
+        - name: Handle failure gracefully
+          debug:
+            msg: "Package installation failed, performing recovery steps"
+
+        - name: Create failure marker
+          file:
+            path: /tmp/deploy_failed.txt
+            state: touch
+
+      always:
+        - name: Always run cleanup or logging
+          debug:
+            msg: "Deployment attempt completed"

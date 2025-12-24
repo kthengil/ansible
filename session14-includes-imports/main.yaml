@@ -1,0 +1,13 @@
+- name: Modular playbook using includes and imports
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install phase
+      import_tasks: tasks/install.yaml
+
+    - name: Configuration phase
+      include_tasks: tasks/config.yaml
+
+    - name: Service phase
+      import_tasks: tasks/service.yaml

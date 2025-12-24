@@ -1,0 +1,27 @@
+- name: File and directory management
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Create application directory
+      file:
+        path: /opt/demo_app
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Create application config file
+      copy:
+        content: |
+          app_name=demo_app
+          managed_by=ansible
+        dest: /opt/demo_app/app.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Remove legacy directory if present
+      file:
+        path: /opt/old_app
+        state: absent

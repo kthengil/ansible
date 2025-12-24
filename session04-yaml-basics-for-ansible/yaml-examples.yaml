@@ -1,0 +1,117 @@
+# --------------------------------------------------
+# YAML EXAMPLES FOR ANSIBLE
+# --------------------------------------------------
+
+# 1. Scalars (simple values)
+string_value: hello
+quoted_string: "hello world"
+single_quoted_string: 'hello world'
+number_value: 42
+boolean_true: true
+boolean_false: false
+null_value: null
+
+# --------------------------------------------------
+# 2. Dictionary (key-value pairs)
+user:
+  name: sysansible
+  shell: /bin/bash
+  uid: 1001
+  home: /home/sysansible
+
+# --------------------------------------------------
+# 3. Simple List
+packages:
+  - vim
+  - git
+  - curl
+  - wget
+
+# Inline list (less readable, but valid)
+tools: [ansible, python3, ssh]
+
+# --------------------------------------------------
+# 4. List of Dictionaries (very common in Ansible)
+users:
+  - name: alice
+    uid: 1002
+    groups:
+      - wheel
+      - developers
+
+  - name: bob
+    uid: 1003
+    groups:
+      - developers
+
+# --------------------------------------------------
+# 5. Nested Structures (list + dict together)
+services:
+  - name: sshd
+    state: started
+    enabled: true
+
+  - name: httpd
+    state: stopped
+    enabled: false
+
+# --------------------------------------------------
+# 6. Multiline Strings
+
+# Literal block (preserves newlines)
+motd_literal: |
+  Authorized access only.
+  All activity is monitored.
+  Disconnect immediately if you are not authorized.
+
+# Folded block (joins lines)
+motd_folded: >
+  This system is managed
+  by Ansible.
+  Manual changes
+  are discouraged.
+
+# --------------------------------------------------
+# 7. Numbers vs Strings (important difference)
+port_number: 80
+port_string: "80"
+
+# --------------------------------------------------
+# 8. File paths and special characters
+paths:
+  - "/var/www/html"
+  - "/etc/ssh/sshd_config"
+  - "/tmp/test file.txt"
+
+# --------------------------------------------------
+# 9. Boolean pitfalls (valid but avoid ambiguity)
+feature_yes: yes
+feature_no: no
+feature_on: on
+feature_off: off
+
+# Recommended explicit boolean
+feature_enabled: true
+
+# --------------------------------------------------
+# 10. YAML Anchors and Aliases (advanced, optional)
+file_defaults: &file_defaults
+  owner: root
+  group: root
+  mode: "0644"
+
+config_file:
+  <<: *file_defaults
+  path: /etc/myapp/app.conf
+
+log_file:
+  <<: *file_defaults
+  path: /var/log/myapp/app.log
+
+# --------------------------------------------------
+# 11. Multiple YAML Documents (rare in Ansible)
+---
+doc2_key: value_from_second_document
+
+# --------------------------------------------------
+# End of YAML examples

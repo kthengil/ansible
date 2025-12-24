@@ -1,0 +1,23 @@
+- name: First Ansible Playbook
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install httpd package
+      dnf:
+        name: httpd
+        state: present
+
+    - name: Ensure httpd service is started
+      service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Create a test file
+      copy:
+        content: "This system is managed by Ansible\n"
+        dest: /tmp/ansible-session5.txt
+        owner: root
+        group: root
+        mode: "0644"

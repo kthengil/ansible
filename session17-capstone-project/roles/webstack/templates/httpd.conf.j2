@@ -1,0 +1,8 @@
+# Managed by Ansible
+
+Listen {{ http_port }}
+
+<VirtualHost *:{{ http_port }}>
+    DocumentRoot "{{ web_root }}"
+    ServerName {{ ansible_hostname }}
+</VirtualHost>

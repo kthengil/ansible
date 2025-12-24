@@ -1,0 +1,15 @@
+- name: Service management using service module
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Ensure sshd service is running
+      service:
+        name: sshd
+        state: started
+        enabled: true
+
+    - name: Restart sshd service
+      service:
+        name: sshd
+        state: restarted

@@ -1,0 +1,6 @@
+web_package: httpd
+web_service: httpd
+web_root: /var/www/html
+
+app_name: demo_web_app
+environment: production

@@ -1,0 +1,36 @@
+- name: Demonstrate variables and facts
+  hosts: all
+  become: true
+  vars_files:
+    - vars.yaml
+
+  tasks:
+    - name: Install packages using variables
+      dnf:
+        name: "{{ packages }}"
+        state: present
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    - name: Create application info file
+      copy:
+        content: |
+          Application Name: {{ app_name }}
+          Managed by: Ansible
+          Hostname: {{ ansible_hostname }}
+        dest: "{{ app_dir }}/info.txt"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0644"
+
+    - name: Ensure service is enabled and running
+      service:
+        name: "{{ service_name }}"
+        state: started
+        enabled: "{{ service_enabled }}"

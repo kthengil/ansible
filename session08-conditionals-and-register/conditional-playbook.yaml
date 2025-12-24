@@ -1,0 +1,31 @@
+- name: Conditionals and register demo
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Check uptime
+      command: uptime
+      register: uptime_result
+      changed_when: false
+
+    - name: Show uptime
+      debug:
+        msg: "Uptime: {{ uptime_result.stdout }}"
+
+    - name: Create uptime marker file
+      file:
+        path: /tmp/uptime_checked.txt
+        state: touch
+      when: uptime_result.rc == 0
+
+    - name: Check if httpd is installed
+      command: rpm -q httpd
+      register: httpd_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install httpd if not installed
+      dnf:
+        name: httpd
+        state: present
+      when: httpd_check.rc != 0
