@@ -113,9 +113,3 @@ inventory:
 naming:
   prefix: ansiblelab             # final container name: ansiblelab-<node>
 
-# -------------------------
-# Logging
-# -------------------------
-logging:
-  enabled: true
-  directory: ./logs

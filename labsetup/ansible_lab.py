@@ -20,8 +20,37 @@ import sys
 import yaml
 from pathlib import Path
 from textwrap import indent
+from datetime import datetime
+
 
 CONFIG_FILE = "lab_config.yaml"
+LOG_FILE = Path("logs/ansible_lab.log")
+LOG_MAX = 1024 * 1024  # 1MB
+
+# ==========================================================
+# Logging
+# ==========================================================
+
+
+
+def rotate_logs():
+    if not LOG_FILE.exists():
+        return
+    if LOG_FILE.stat().st_size < LOG_MAX:
+        return
+
+    old = LOG_FILE.with_suffix(".log.1")
+    if old.exists():
+        old.unlink()         # delete previous rotated copy
+    LOG_FILE.rename(old)     # rename current → .1
+
+def log(msg):
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    rotate_logs()
+    with open(LOG_FILE, "a") as f:
+        ts = datetime.now().isoformat(timespec="seconds")
+        f.write(f"{ts}  {msg}\n")
+
 
 # ==========================================================
 # UI / UX CONSTANTS
@@ -63,9 +92,38 @@ def section(title):
 def row(*cols):
     print(" ".join(cols))
 
-def run(cmd, check=True):
-    print(f"[+] {cmd}")
-    return subprocess.run(cmd, shell=True, check=check)
+def run(cmd, check=False, quiet=True):
+    """
+    Execute shell command.
+    - quiet=True  → suppress stdout/stderr to terminal (still logged)
+    - quiet=False → show output to user
+    Returns: process object
+    """
+    log(f"RUN: {cmd}")
+
+    if quiet:
+        proc = subprocess.run(cmd, shell=True,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              text=True)
+    else:
+        proc = subprocess.run(cmd, shell=True, text=True)
+
+    # log output
+    if proc.stdout:
+        log("STDOUT: " + proc.stdout.strip())
+    if proc.stderr:
+        log("STDERR: " + proc.stderr.strip())
+
+    # on error: show stderr to user
+    if check and proc.returncode != 0:
+        print(f"❌ Command failed: {cmd}")
+        print(proc.stderr)
+        raise subprocess.CalledProcessError(proc.returncode, cmd)
+
+    return proc
+
+
 
 def load_config():
     if not Path(CONFIG_FILE).exists():
@@ -101,6 +159,17 @@ def container_exists(name):
     r = runtime()
     result = subprocess.run(f"{r} inspect {name}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return result.returncode == 0
+
+def container_state(name):
+    r = runtime()
+    result = subprocess.run(
+        f"{r} inspect -f '{{{{.State.Status}}}}' {name}",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True
+    )
+    return "unavailable" if result.returncode != 0 else result.stdout.strip()
 
 
 # ==========================================================
@@ -366,6 +435,13 @@ def cmd_build():
 
 def cmd_setup():
     ensure_network()
+
+    if all(container_exists(container_name(n)) for n in all_nodes()):
+        print("🔒 Lab is already set up")
+        print("👉 Use: start / stop / decom\n")
+        return
+
+    print("▶️ Performing first-time setup…")
     start_container(CONFIG["control_node"], is_control=True)
     for n in CONFIG["managed_nodes"]:
         start_container(n)
@@ -377,50 +453,57 @@ def cmd_setup():
     configure_bash_prompt()
 
 def cmd_start():
-    r = runtime()
-    section(f"{UI.ICON_RUN} Starting Ansible Lab Containers")
-    print(f"{'ROLE':<{UI.ROLE_W}} {'NODE':<{UI.NODE_W}} STATUS")
-    print("-" * 60)
-    missing = False
-    for node in all_nodes():
-        role, icon = node_role(node)
-        cname = container_name(node)
-        print(f"{icon} {role:<{UI.ROLE_W}} {node['name']:<{UI.NODE_W}} ", end="")
-        if not container_exists(cname):
-            print(f"{UI.RED}NOT CREATED{UI.RESET}")
-            missing = True
-            continue
-        result = subprocess.run(f"{r} start {cname}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"{UI.GREEN}STARTED{UI.RESET}" if result.returncode == 0 else f"{UI.YELLOW}ALREADY RUNNING{UI.RESET}")
-    if missing:
-        print(f"\n{UI.RED}{UI.ICON_ERR} Missing containers – run './ansible_lab.py setup'{UI.RESET}\n")
-    else:
-        print(f"\n{UI.GREEN}{UI.ICON_OK} Lab started successfully{UI.RESET}\n")
+    # Check if all nodes are already running
+    if all(container_state(container_name(n)) == "running" for n in all_nodes()):
+        print("🟢 Lab already running")
+        return
+
+    print("▶️ Starting lab…")
+    for n in all_nodes():
+        name = container_name(n)
+        if container_state(name) != "running":
+            proc = run(f"{runtime()} start {name}", check=False)
+            print(f"{n['name']} → {'started' if proc.returncode == 0 else 'failed'}")
+    print("")
+
+
 
 def cmd_stop():
-    r = runtime()
-    section(f"{UI.ICON_STOP} Stopping Ansible Lab Containers")
-    row(f"{'ROLE':<{UI.ROLE_W}}", f"{'NODE':<{UI.NODE_W}}", "STATUS")
-    print("-" * 60)
-    for node in all_nodes():
-        role, icon = node_role(node)
-        name = container_name(node)
-        print(f"{icon} {role:<{UI.ROLE_W}} {node['name']:<{UI.NODE_W}} ", end="")
-        run(f"{r} stop {name}", check=False)
-        print(f"{UI.YELLOW}STOPPED{UI.RESET}")
-    print(f"\n{UI.YELLOW}{UI.ICON_WARN} Containers stopped (data preserved){UI.RESET}\n")
+    # detect current state
+    states = [container_state(container_name(n)) for n in all_nodes()]
+    if all(s in ("exited", "unavailable") for s in states):
+        print("🟡 Lab already stopped")
+        return
+
+    print("🛑 Stopping lab…")
+    for n in all_nodes():
+        name = container_name(n)
+        if container_state(name) == "running":
+            proc = run(f"{runtime()} stop {name}", check=False)
+            print(f"{n['name']} → {'stopped' if proc.returncode == 0 else 'failed'}")
+    print("")
+
+
 
 def cmd_decom():
-    r = runtime()
-    net = CONFIG["network"]["name"]
-    section(f"{UI.ICON_DECOM} Decommissioning Ansible Lab")
-    print("🧹 Stopping containers...")
-    stop_all()
-    print("🗑 Removing containers...")
-    remove_all()
-    print(f"🌐 Removing network: {net}")
-    run(f"{r} network rm {net}", check=False)
-    print(f"\n{UI.RED}{UI.ICON_ERR} Lab decommissioned (images & workspace preserved){UI.RESET}\n")
+    # detect state
+    none_exist = True
+    for n in all_nodes():
+        if container_exists(container_name(n)):
+            none_exist = False
+            break
+
+    if none_exist:
+        print("🗑️ Lab already removed (nothing to do)")
+        return
+
+    print("🧹 Removing lab…")
+    for n in all_nodes():
+        run(f"{runtime()} rm -f {container_name(n)}")
+        print(f"{n['name']} → removed")
+    run(f"{runtime()} network rm {CONFIG['network']['name']}", check=False)
+    print("")
+
 
 def cmd_status():
     status()

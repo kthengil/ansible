@@ -97,13 +97,13 @@ graph TD
 
 # 🎁 What This Lab Provides
 
-| Component                | Purpose                         |
-| ------------------------ | ------------------------------- |
-| Control Node `alpha`     | Where _Ansible runs_            |
-| Managed Nodes            | Where tasks _execute_           |
-| Persistent Lab Workspace | All lab sessions live here      |
-| SSH Automation           | Passwordless key authentication |
-| Colored Prompts          | Red = control, Green = managed  |
+| Component                | Purpose                            |
+| ------------------------ | ---------------------------------- |
+| Control Node `alpha`     | Where _Ansible runs_               |
+| Managed Nodes            | Where tasks _execute_              |
+| Persistent Lab Workspace | All lab sessions live here         |
+| SSH Automation           | Passwordless key authentication    |
+| Colored Prompts          | Identify the host and avoid errors |
 
 ---
 
