@@ -1,0 +1,121 @@
+# lab_config.yaml
+# Central configuration file for Ansible Lab
+
+# -------------------------
+# Runtime configuration
+# -------------------------
+runtime: docker          # docker or podman
+
+# -------------------------
+# Network configuration
+# -------------------------
+network:
+  name: ansiblelab
+  driver: bridge
+
+# -------------------------
+# Persistent workspace
+# -------------------------
+workspace:
+  enabled: true
+  local_base_dir: /data3/ansible/lab
+  container_path: /home/sysansible/lab
+
+
+# -------------------------
+# User configuration
+# -------------------------
+user:
+  name: sysansible
+  ssh_key_dir: ./ssh            # keys will be generated here
+  ssh_key_name: ansible_lab_key # private/public key prefix
+
+# -------------------------
+# Control node definition
+# -------------------------
+control_node:
+  name: alpha
+  role: control
+  image: rocky8ansiblecn        # can be rocky8ansiblecn or rocky9ansiblecn
+  hostname: alpha
+  ports:
+    - host: 22222               # host port
+      container: 22             # container ssh port
+  volumes: []
+  env: {}
+  privileged: false
+
+# -------------------------
+# Managed nodes definition
+# Each node can independently choose rocky8 or rocky9 image
+# -------------------------
+managed_nodes:
+  - name: flame
+    role: managed
+    image: rocky8ansiblemn
+    hostname: flame
+
+  - name: frost
+    role: managed
+    image: rocky8ansiblemn
+    hostname: frost
+
+  - name: storm
+    role: managed
+    image: rocky9ansiblemn
+    hostname: storm
+
+  - name: earth
+    role: managed
+    image: rocky8ansiblemn
+    hostname: earth
+
+  - name: water
+    role: managed
+    image: rocky9ansiblemn
+    hostname: water
+
+# -------------------------
+# SSH bootstrap behavior
+# -------------------------
+ssh:
+  setup: true                   # enable ssh key setup
+  copy_key: true                # copy control node public key to managed nodes
+  known_hosts_update: true
+  skip_host_key_check: true
+
+# -------------------------
+# Host SSH keys to inject into control node
+# (public keys only)
+# -------------------------
+host_ssh_keys:
+  enabled: true
+  keys:
+    - ~/.ssh/id_ed25519.pub
+    - ~/.ssh/id_rsa.pub
+# -------------------------
+# Inventory generation
+# -------------------------
+inventory:
+  path: ./inventory.ini
+  groups:
+    control: [alpha]
+    managed:
+      - flame
+      - frost
+      - storm
+      - earth
+      - water
+
+# -------------------------
+# Container naming convention
+# -------------------------
+naming:
+  prefix: ansiblelab             # final container name: ansiblelab-<node>
+
+# -------------------------
+# Logging
+# -------------------------
+logging:
+  enabled: true
+  directory: ./logs
